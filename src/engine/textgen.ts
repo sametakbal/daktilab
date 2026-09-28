@@ -165,11 +165,15 @@ export function sentenceText(rng: Rng, sentences: string[], typeable: (ch: strin
 export function plainWordsText(rng: Rng, dictionary: string[], typeable: (ch: string) => boolean, toLower: (s: string) => string, length: number): string {
   const pool = [...new Set(dictionary.map(toLower))].filter((w) => w.length > 1 && Array.from(w).every((ch) => isLetter(ch) && typeable(ch)));
   if (pool.length === 0) return "";
+  // Walk a shuffled deck so no word repeats until the whole pool has been used.
+  let deck: string[] = [];
   let prev = "";
   return fill(length, () => {
-    let w = pick(rng, pool);
-    if (w === prev && pool.length > 1) w = pick(rng, pool);
-    prev = w;
-    return w;
+    if (deck.length === 0) {
+      deck = shuffle(rng, pool);
+      if (deck.length > 1 && deck.at(-1) === prev) deck.unshift(deck.pop()!);
+    }
+    prev = deck.pop()!;
+    return prev;
   });
 }

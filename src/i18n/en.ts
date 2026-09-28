@@ -1,7 +1,7 @@
 import type { Dict } from "./tr";
 
 export const en: Dict = {
-  app: { name: "daktilab", tagline: "A touch-typing laboratory" },
+  app: { name: "daktilab", tagline: "A touch-typing laboratory", openSource: "An open-source project", source: "View on GitHub" },
   nav: { home: "Home", lessons: "Lessons", practice: "Practice", test: "Test", leaderboard: "Leaderboard", stats: "Stats", settings: "Settings", login: "Sign in" },
   layouts: { "tr-q": "Turkish Q", "tr-f": "Turkish F", "en-us": "English (US)" },
   fingers: {
@@ -32,6 +32,7 @@ export const en: Dict = {
     start: "Start typing to begin",
     restart: "Restart",
     restartHint: "Esc: restart step",
+    focusHint: "Click here to keep typing",
     placeFingers: "Place your fingers on the home row",
     press: "Press {{key}} with {{finger}}",
     pressShift: "Press {{key}} with {{finger}}, Shift with the other hand",
@@ -41,7 +42,7 @@ export const en: Dict = {
     notFound: "Lesson not found.",
   },
   exercise: { intro: "Intro", drill: "Drill", words: "Words", review: "Reinforce", text: "Text" },
-  metrics: { wpm: "WPM", wpmLong: "Words per minute", accuracy: "Accuracy", time: "Time", errors: "Errors" },
+  metrics: { wpm: "WPM", wpmLong: "Words per minute", words: "words", wordsLong: "Correctly typed words", remaining: "Time left", sec: "s", accuracy: "Accuracy", time: "Time", errors: "Errors" },
   result: {
     passed: "Well done!",
     failed: "A bit more practice",
@@ -197,9 +198,10 @@ export const en: Dict = {
   },
   test: {
     title: "Daily test",
-    sub: "Same passage for everyone, every day — a fair way to compare your speed.",
-    desc: "One standardized text per day and layout. Your best WPM goes on the leaderboard.",
+    sub: "How many words can you type correctly in one minute?",
+    desc: "The timer starts with your first key. Every attempt uses different words; the number of words you type correctly in 60 seconds is your score, and your best goes on the leaderboard.",
     start: "Start test",
+    loading: "Preparing…",
     submitted: "Score submitted to the leaderboard.",
     signInHint: "Sign in to appear on the leaderboard.",
     usernameHint: "Pick a username on the account page to appear on the leaderboard.",

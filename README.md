@@ -1,51 +1,71 @@
 # daktilab
 
-Aşama aşama 10 parmak yazma eğitimi veren bir web uygulaması. SolidJS + TypeScript + Tailwind CSS ile yazıldı. İlerleme her zaman tarayıcıda (localStorage) saklanır; isteğe bağlı bir Supabase backend'i ile hesap, bulut senkronizasyon, günlük test ve global sıralama eklenebilir (aşağıya bakın).
+**English** | [Türkçe](README.tr.md)
 
-- Klavye düzenleri: **Türkçe Q**, **Türkçe F**, **İngilizce (US)**
-- Arayüz: Türkçe / English
+An open-source web app that teaches touch typing step by step. Built with SolidJS + TypeScript + Tailwind CSS. Progress is always stored in the browser (localStorage); an optional Supabase backend adds accounts, cloud sync, a one-minute test and a global leaderboard (see below).
 
-## Komutlar
+- Keyboard layouts: **Turkish Q**, **Turkish F**, **English (US)**
+- Interface: English / Türkçe
+
+## Commands
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # Vitest: yazma motoru + müfredat testleri
-npm run build    # dist/ (statik, her yere deploy edilebilir; HashRouter kullanır)
+npm test         # Vitest: typing engine + curriculum tests
+npm run build    # dist/ (static, deployable anywhere; uses HashRouter)
 ```
 
-## Nasıl çalışır
+## How it works
 
-- **Müfredat** ([src/curriculum/stages.ts](src/curriculum/stages.ts)): her düzen için tuş tanıtım sırası. Ana sıra → üst sıra → alt sıra → büyük harf → noktalama → rakamlar → semboller → gerçek metin.
-- **Dersler** ([src/curriculum/generator.ts](src/curriculum/generator.ts)): her ders 1–3 yeni tuş tanıtır; adımlar: tanıtım → alıştırma → kelimeler → pekiştirme. Metinler yalnızca o ana kadar öğrenilmiş karakterleri kullanır (testle garanti edilir) ve her denemede değişir.
-- **Yazma motoru** ([src/engine/session.ts](src/engine/session.ts)): UI'dan bağımsız, saf fonksiyonlar. Tuş başına isabet/hata/gecikme ve hatalı bigramları kaydeder.
-- **Kas hafızası mekanikleri**: parmak renkli ekran klavyesi ve el şeması, ilerledikçe soluklaşan/gizlenen klavye, 1,5 sn duraksamadan sonra gelen ipucu, "hatada dur" modu, zayıf tuş ağırlıklı adaptif pratik, aralıklı tekrar, metronom.
-- **Düzen kontrolü**: basılan tuşlar (`KeyboardEvent.code` + `key`) seçili düzenle uyuşmazsa uyarı gösterilir ve uygun düzen önerilir.
-- **Kilit açma**: bir ders %94 doğruluk ve aşamanın hedef hızıyla geçilince sonraki açılır; 1–3 yıldız.
+- **Curriculum** ([src/curriculum/stages.ts](src/curriculum/stages.ts)): the order in which keys are introduced for each layout. Home row → top row → bottom row → capitals → punctuation → digits → symbols → real text.
+- **Lessons** ([src/curriculum/generator.ts](src/curriculum/generator.ts)): each lesson introduces 1–3 new keys in four steps: intro → drill → words → reinforce. Texts only use characters learned so far (enforced by tests) and change on every attempt.
+- **One-minute test**: real lowercase words in the interface language, different on every attempt. The timer starts with the first key; the score is the number of words typed correctly in 60 seconds. When the window loses focus the text blurs and the timer pauses.
+- **Typing engine** ([src/engine/session.ts](src/engine/session.ts)): pure functions, independent of the UI. Records hits, misses and latency per key, plus mistyped bigrams.
+- **Muscle-memory mechanics**: finger-coloured on-screen keyboard and hand diagram, a keyboard that fades and hides as you progress, a hint after a 1.5 s pause, "stop on error" mode, adaptive practice weighted towards weak keys, spaced repetition, metronome.
+- **Layout check**: if the keys you press (`KeyboardEvent.code` + `key`) don't match the selected layout, a warning suggests the right one.
+- **Unlocking**: passing a lesson with 94% accuracy and the stage's target speed unlocks the next one; 1–3 stars.
 
-## Yapı
+## Structure
 
 ```
 src/
-  layouts/      düzen verileri (KeyboardEvent.code → karakter) + fiziksel klavye/parmak eşlemesi
-  curriculum/   aşamalar ve ders/alıştırma üretici
-  engine/       yazma oturumu, metrikler, metin üretici
-  words/        TR/EN kelime listeleri ve cümleler
-  store/        ayarlar, ilerleme (localStorage), auth + bulut senkronizasyon
-  lib/          supabase istemcisi, sıralama (leaderboard) sorguları
-  i18n/         TR/EN sözlükler
+  layouts/      layout data (KeyboardEvent.code → character) + physical keyboard/finger mapping
+  curriculum/   stages and the lesson/drill/test generator
+  engine/       typing session, metrics, text generator
+  words/        bundled TR/EN word lists and sentences
+  store/        settings, progress (localStorage), auth + cloud sync
+  lib/          Supabase client, leaderboard queries, test word fetching
+  i18n/         TR/EN dictionaries
   components/   Keyboard, Hands, TypingArea, Runner, ResultCard, LineChart…
   pages/        Home, Lessons, Lesson, Practice, Test, Leaderboard, Stats, Settings, Login, Onboarding
+scripts/        import-words.mjs (loads dictionary files into Supabase)
+supabase/       SQL migrations
 ```
 
-## Backend kurulumu (opsiyonel)
+## Backend setup (optional)
 
-Backend olmadan uygulama tamamen çalışır (localStorage). Hesap, cihazlar arası ilerleme senkronizasyonu, günlük standart test ve global sıralama için bir [Supabase](https://supabase.com) projesi gerekir:
+The app works fully without a backend (localStorage). Accounts, cross-device progress sync and the global leaderboard need a [Supabase](https://supabase.com) project:
 
-1. Supabase'de yeni bir proje oluştur; Authentication → Providers'tan **Email** ve (istersen) **Google**/**GitHub** OAuth sağlayıcılarını aç.
-2. SQL Editor'de [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) dosyasını çalıştır (tablolar + RLS politikaları).
-3. Project Settings → API'den **Project URL** ve **anon public key**'i al.
-4. `.env.example` dosyasını `.env.local` olarak kopyala ve `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` değerlerini doldur.
-5. `npm run dev` — giriş yap, `/test` sayfasından günlük testi tamamla, `/leaderboard`'da sonucu gör.
+1. Create a new Supabase project; under Authentication → Providers enable **Email** and, if you like, **Google**/**GitHub** OAuth.
+2. Run [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) in the SQL Editor (tables + RLS policies; safe to re-run).
+3. Copy the **Project URL** and **anon public key** from Project Settings → API.
+4. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
+5. `npm run dev` — sign in, pick a username, finish the test on `/test` and see your result on `/leaderboard`.
 
-Bu değişkenler boşsa uygulama otomatik olarak çevrimdışı modda çalışır; `/login`, `/leaderboard` ve `/test` sayfaları bunu belirtir.
+If these variables are empty the app runs in offline mode automatically; the `/login`, `/leaderboard` and `/test` pages say so.
+
+### Test dictionary (optional)
+
+The one-minute test pulls its words from a large dictionary in the database. Each attempt fetches ~800 random words through the `random_words` RPC, and the next batch is prefetched. If the table is empty or unreachable, the small bundled word lists are used instead.
+
+1. Run [supabase/migrations/0002_words.sql](supabase/migrations/0002_words.sql) in the SQL Editor.
+2. Copy the **service_role** key from Project Settings → API and add it to `.env.local` as `SUPABASE_SERVICE_ROLE_KEY=...`. This key bypasses RLS: **never give it a `VITE_` prefix**, or it will be shipped to the browser.
+3. Import the word files (one word per line; safe to re-run):
+
+   ```sh
+   node --env-file=.env.local scripts/import-words.mjs en ../ALL_ENGLISH_WORDS.txt
+   node --env-file=.env.local --max-old-space-size=4096 scripts/import-words.mjs tr ../ALL_TURKISH_WORDS.txt
+   ```
+
+   The script lowercases each line, keeps only 2–20 letter words made of that language's letters, and removes duplicates. The Turkish file (~6.6 million words) takes roughly 500–700 MB in the database, which is more than the Supabase free plan allows.

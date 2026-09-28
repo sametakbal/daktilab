@@ -2,7 +2,7 @@ import { useNavigate } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
 import type { Exercise } from "../curriculum/generator";
 import type { Visibility } from "../curriculum/stages";
-import { combine, type Metrics, mergeCharStats, metrics } from "../engine/metrics";
+import { combine, correctWords, type Metrics, mergeCharStats, metrics } from "../engine/metrics";
 import { type CharStat, createSession, input, isFinished, type Session } from "../engine/session";
 import { t } from "../i18n";
 import { strokeFor } from "../layouts";
@@ -26,6 +26,10 @@ interface RunnerProps {
   exercises: Exercise[];
   visibility: Visibility;
   onComplete: (r: RunResult) => void;
+  /** Timed run: ends this long after the first key; score is correct words per minute. */
+  timeLimitMs?: number;
+  /** Limit the text to this many visible lines (for long timed passages). */
+  lines?: number;
 }
 
 /** Pause before a hint appears, so the learner first tries to recall the key. */
@@ -45,12 +49,17 @@ export default function Runner(props: RunnerProps) {
   const [capsLock, setCapsLock] = createSignal(false);
   const [mismatch, setMismatch] = createSignal<{ mismatch: boolean; suggestion: LayoutId | null }>({ mismatch: false, suggestion: null });
   const [mismatchDismissed, setMismatchDismissed] = createSignal(false);
+  // Keys only reach the page while the window has focus; blur the text otherwise so it's obvious.
+  const [focused, setFocused] = createSignal(document.hasFocus());
 
   let charStats: Record<string, CharStat> = {};
   let bigrams: Record<string, number> = {};
   let samples: KeySample[] = [];
   let flashTimer: number | undefined;
   let stepTimer: number | undefined;
+  /** Correct words from finished steps, for timed runs. */
+  let wordsDone = 0;
+  let ended = false;
 
   const exercise = () => props.exercises[step()];
   const visibility = (): Visibility => {
@@ -96,6 +105,9 @@ export default function Runner(props: RunnerProps) {
   };
 
   const live = createMemo(() => combine([...done(), metrics(session(), now())]));
+  // Once the current step is recorded in done(), its words are already part of wordsDone.
+  const liveWords = () => wordsDone + (done().length > step() ? 0 : correctWords(session()));
+  const remainingMs = () => Math.max(0, (props.timeLimitMs ?? 0) - live().durationMs);
 
   const flash = (code: string, wrong: boolean) => {
     clearTimeout(flashTimer);
@@ -121,17 +133,30 @@ export default function Runner(props: RunnerProps) {
     });
   };
 
-  const finishStep = (s: Session) => {
-    const m = metrics(s, s.finishedAt ?? performance.now());
+  /** `at` overrides the end time (a timed run stops exactly at its limit); `timeUp` ends the whole run. */
+  const finishStep = (s: Session, at = s.finishedAt ?? performance.now(), timeUp = false) => {
+    const m = metrics(s, at);
     charStats = mergeCharStats(charStats, s.charStats);
     for (const [bg, n] of Object.entries(s.bigramMisses)) bigrams[bg] = (bigrams[bg] ?? 0) + n;
+    wordsDone += correctWords(s);
     const all = [...done(), m];
     setDone(all);
-    if (step() + 1 < props.exercises.length) {
+    if (!timeUp && step() + 1 < props.exercises.length) {
       stepTimer = window.setTimeout(() => startStep(step() + 1), STEP_PAUSE_MS);
-    } else {
-      stepTimer = window.setTimeout(() => props.onComplete({ metrics: combine(all), charStats, bigramMisses: bigrams }), STEP_PAUSE_MS);
+      return;
     }
+    ended = true;
+    const total = combine(all);
+    if (props.timeLimitMs) total.wpm = total.durationMs > 0 ? wordsDone / (total.durationMs / 60000) : 0;
+    stepTimer = window.setTimeout(() => props.onComplete({ metrics: total, charStats, bigramMisses: bigrams }), STEP_PAUSE_MS);
+  };
+
+  const checkTime = (at: number) => {
+    const limit = props.timeLimitMs;
+    const s = session();
+    if (!limit || ended || s.startedAt === null || isFinished(s)) return;
+    const used = done().reduce((a, m) => a + m.durationMs, 0);
+    if (used + at - s.startedAt >= limit) finishStep(s, s.startedAt + limit - used, true);
   };
 
   const sample = (e: KeyboardEvent) => {
@@ -143,6 +168,7 @@ export default function Runner(props: RunnerProps) {
   const onKeyDown = (e: KeyboardEvent) => {
     const target = e.target as HTMLElement | null;
     if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+    if (ended) return;
     if (e.key === "Escape") {
       if (!isFinished(session())) startStep(step());
       return;
@@ -157,8 +183,10 @@ export default function Runner(props: RunnerProps) {
     e.preventDefault();
     if (key !== "Backspace") sample(e);
 
-    const before = session();
     const at = performance.now();
+    checkTime(at);
+    if (ended) return;
+    const before = session();
     const next = input(before, key, at);
     if (next === before) return;
     batch(() => {
@@ -177,9 +205,38 @@ export default function Runner(props: RunnerProps) {
   onMount(() => {
     (document.activeElement as HTMLElement | null)?.blur?.();
     window.addEventListener("keydown", onKeyDown);
-    const tick = window.setInterval(() => setNow(performance.now()), 200);
+    // Time spent away from the window doesn't count: on return, shift the session's clock forward.
+    let blurredAt: number | null = null;
+    const onBlur = () => {
+      blurredAt = performance.now();
+      setFocused(false);
+    };
+    const onFocus = () => {
+      const at = performance.now();
+      const s = session();
+      if (blurredAt !== null && s.startedAt !== null && !isFinished(s) && !ended) {
+        const away = at - blurredAt;
+        setSession({ ...s, startedAt: s.startedAt + away, lastAt: s.lastAt === null ? null : s.lastAt + away });
+      }
+      blurredAt = null;
+      batch(() => {
+        setNow(at);
+        setLastActivity(at);
+        setFocused(true);
+      });
+    };
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+    const tick = window.setInterval(() => {
+      if (!focused()) return; // paused: the clock stays frozen until focus returns
+      const at = performance.now();
+      setNow(at);
+      checkTime(at);
+    }, 200);
     onCleanup(() => {
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
       clearInterval(tick);
       clearTimeout(flashTimer);
       clearTimeout(stepTimer);
@@ -189,7 +246,7 @@ export default function Runner(props: RunnerProps) {
   // Metronome runs only while the learner is actively typing.
   const typing = () => session().startedAt !== null && !isFinished(session());
   createEffect(
-    on([() => settings.metronome && typing(), () => settings.bpm], ([enabled, bpm]) => {
+    on([() => settings.metronome && typing() && focused(), () => settings.bpm], ([enabled, bpm]) => {
       if (!enabled) return;
       let beat = 0;
       const id = window.setInterval(() => playTick(beat++ % 4 === 0), 60000 / bpm);
@@ -220,15 +277,33 @@ export default function Runner(props: RunnerProps) {
           </For>
         </div>
         <div class="flex items-center gap-5 font-mono text-sm tabular-nums">
-          <div title={t("metrics.wpmLong")}>
-            <span class="text-xl font-semibold">{round(live().wpm)}</span> <span class="text-slate-500">{t("metrics.wpm")}</span>
-          </div>
+          <Show
+            when={props.timeLimitMs}
+            fallback={
+              <div title={t("metrics.wpmLong")}>
+                <span class="text-xl font-semibold">{round(live().wpm)}</span> <span class="text-slate-500">{t("metrics.wpm")}</span>
+              </div>
+            }
+          >
+            <div title={t("metrics.wordsLong")}>
+              <span class="text-xl font-semibold">{liveWords()}</span> <span class="text-slate-500">{t("metrics.words")}</span>
+            </div>
+          </Show>
           <div>
             <span class="text-xl font-semibold">{pct(live().accuracy)}</span> <span class="text-slate-500">{t("metrics.accuracy")}</span>
           </div>
-          <div class="hidden sm:block">
-            <span class="text-xl font-semibold">{formatDuration(live().durationMs)}</span>
-          </div>
+          <Show
+            when={props.timeLimitMs}
+            fallback={
+              <div class="hidden sm:block">
+                <span class="text-xl font-semibold">{formatDuration(live().durationMs)}</span>
+              </div>
+            }
+          >
+            <div title={t("metrics.remaining")}>
+              <span class="text-xl font-semibold">{Math.ceil(remainingMs() / 1000)}</span> <span class="text-slate-500">{t("metrics.sec")}</span>
+            </div>
+          </Show>
         </div>
       </div>
 
@@ -266,7 +341,16 @@ export default function Runner(props: RunnerProps) {
         <div class="absolute inset-x-0 top-0 h-1 bg-slate-100 dark:bg-slate-800">
           <div class="h-full bg-indigo-500 transition-[width] duration-150" style={{ width: `${progress()}%` }} />
         </div>
-        <TypingArea session={session()} shake={shake()} />
+        <div class="relative">
+          <div class="transition-[filter] duration-200" classList={{ "blur-sm select-none": !focused() }}>
+            <TypingArea session={session()} shake={shake()} lines={props.lines} />
+          </div>
+          <Show when={!focused()}>
+            <button type="button" class="absolute inset-0 flex items-center justify-center text-base font-medium text-slate-700 dark:text-slate-200" onClick={() => window.focus()}>
+              {t("lesson.focusHint")}
+            </button>
+          </Show>
+        </div>
         <div class="mt-5 flex min-h-6 flex-wrap items-center justify-between gap-2 text-sm">
           <span class="text-slate-500 dark:text-slate-400">
             <Show when={session().startedAt === null} fallback={<Show when={hintActive()}>{instruction()}</Show>}>

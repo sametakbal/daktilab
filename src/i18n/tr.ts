@@ -1,5 +1,5 @@
 export const tr = {
-  app: { name: "daktilab", tagline: "10 parmak yazma laboratuvarı" },
+  app: { name: "daktilab", tagline: "10 parmak yazma laboratuvarı", openSource: "Açık kaynak bir projedir", source: "GitHub'da incele" },
   nav: { home: "Ana sayfa", lessons: "Dersler", practice: "Pratik", test: "Test", leaderboard: "Sıralama", stats: "İstatistik", settings: "Ayarlar", login: "Giriş yap" },
   layouts: { "tr-q": "Türkçe Q", "tr-f": "Türkçe F", "en-us": "İngilizce (US)" },
   fingers: {
@@ -30,6 +30,7 @@ export const tr = {
     start: "Başlamak için yazmaya başla",
     restart: "Yeniden başla",
     restartHint: "Esc: adımı yeniden başlat",
+    focusHint: "Yazmaya devam etmek için buraya tıkla",
     placeFingers: "Parmaklarını ana sıraya yerleştir",
     press: "{{finger}} {{key}} tuşuna bas",
     pressShift: "{{finger}} {{key}} tuşuna, diğer elinle Shift'e bas",
@@ -39,7 +40,7 @@ export const tr = {
     notFound: "Ders bulunamadı.",
   },
   exercise: { intro: "Tanıtım", drill: "Alıştırma", words: "Kelimeler", review: "Pekiştirme", text: "Metin" },
-  metrics: { wpm: "KDK", wpmLong: "Kelime / dakika", accuracy: "Doğruluk", time: "Süre", errors: "Hata" },
+  metrics: { wpm: "KDK", wpmLong: "Kelime / dakika", words: "kelime", wordsLong: "Doğru yazılan kelime", remaining: "Kalan süre", sec: "sn", accuracy: "Doğruluk", time: "Süre", errors: "Hata" },
   result: {
     passed: "Tebrikler!",
     failed: "Biraz daha pratik",
@@ -195,9 +196,10 @@ export const tr = {
   },
   test: {
     title: "Günlük test",
-    sub: "Her gün herkese aynı metin — hızını karşılaştırmanın adil bir yolu.",
-    desc: "Her gün ve düzen için standart bir metin. En iyi KDK'n sıralamaya eklenir.",
+    sub: "1 dakikada kaç kelimeyi doğru yazabilirsin?",
+    desc: "Süre ilk tuşla başlar. Her denemede farklı kelimeler gelir; 60 saniyede doğru yazdığın kelime sayısı skorun olur ve en iyisi sıralamaya eklenir.",
     start: "Teste başla",
+    loading: "Hazırlanıyor…",
     submitted: "Skor sıralamaya gönderildi.",
     signInHint: "Sıralamada görünmek için giriş yap.",
     usernameHint: "Sıralamada görünmek için hesap sayfasından bir kullanıcı adı seç.",

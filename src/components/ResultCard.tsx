@@ -14,6 +14,8 @@ interface ResultCardProps {
   /** Lesson results show pass/fail and stars; practice results don't. */
   lesson?: { stars: number; targetWpm: number; newBest: boolean; unlocked: boolean };
   actions: JSX.Element;
+  /** Label for the speed figure when it isn't plain WPM (e.g. correct words in a timed test). */
+  scoreLabel?: string;
 }
 
 export default function ResultCard(props: ResultCardProps) {
@@ -56,7 +58,7 @@ export default function ResultCard(props: ResultCardProps) {
       </Show>
 
       <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stat(t("metrics.wpm"), String(round(props.metrics.wpm)))}
+        {stat(props.scoreLabel ?? t("metrics.wpm"), String(round(props.metrics.wpm)))}
         {stat(t("metrics.accuracy"), pct(props.metrics.accuracy))}
         {stat(t("metrics.time"), formatDuration(props.metrics.durationMs))}
         {stat(t("metrics.errors"), String(props.metrics.errors))}

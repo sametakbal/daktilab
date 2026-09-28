@@ -22,6 +22,22 @@ export function correctChars(s: Session): number {
   return n;
 }
 
+/** Words whose every character has been typed correctly (the word in progress doesn't count). */
+export function correctWords(s: Session): number {
+  let n = 0;
+  let start = 0;
+  for (let i = 0; i <= s.chars.length; i++) {
+    if (i < s.chars.length && s.chars[i] !== " ") continue;
+    if (i > start && s.pos >= i) {
+      let ok = true;
+      for (let j = start; j < i; j++) if (s.typed[j] !== s.chars[j]) ok = false;
+      if (ok) n++;
+    }
+    start = i + 1;
+  }
+  return n;
+}
+
 export function wpm(chars: number, ms: number): number {
   if (ms <= 0) return 0;
   return chars / 5 / (ms / 60000);

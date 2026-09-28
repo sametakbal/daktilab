@@ -69,4 +69,27 @@ describe.each(LAYOUT_IDS)("daily test on %s", (id) => {
       }
     }
   });
+
+  it("uses an external dictionary, dropping untypeable or non-letter entries", () => {
+    const layout = LAYOUTS[id];
+    const text = buildTest(layout, "en", 7, ["house", "Water", "r2d2", "a+b", "tree"])[0].text;
+    const used = new Set(text.split(" "));
+    expect([...used].sort()).toEqual(["house", "tree", "water"]);
+  });
+
+  it("falls back to the bundled list when the external dictionary is unusable", () => {
+    const layout = LAYOUTS[id];
+    const text = buildTest(layout, "en", 7, ["123", "!!"])[0].text;
+    const dict = new Set(wordsForLang("en"));
+    expect(text.split(" ").every((w) => dict.has(w))).toBe(true);
+  });
+
+  it.each(["tr", "en"] as const)("changes with the seed and doesn't repeat words early on in %s", (lang) => {
+    const layout = LAYOUTS[id];
+    const a = buildTest(layout, lang, 1)[0].text;
+    const b = buildTest(layout, lang, 2)[0].text;
+    expect(a).not.toBe(b);
+    const first = a.split(" ").slice(0, 100);
+    expect(new Set(first).size).toBe(first.length);
+  });
 });
