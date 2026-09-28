@@ -48,7 +48,10 @@ supabase/       SQL migration'ları
 Backend olmadan uygulama tamamen çalışır (localStorage). Hesap, cihazlar arası ilerleme senkronizasyonu ve global sıralama için bir [Supabase](https://supabase.com) projesi gerekir:
 
 1. Supabase'de yeni bir proje oluştur; Authentication → Providers'tan **Email** ve (istersen) **Google**/**GitHub** OAuth sağlayıcılarını aç.
-2. SQL Editor'de [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) dosyasını çalıştır (tablolar + RLS politikaları; tekrar çalıştırmak güvenli).
+2. SQL Editor'de [supabase/migrations/](supabase/migrations/) klasöründeki dosyaları sırayla çalıştır (hepsi tekrar çalıştırılabilir):
+   - `0001_init.sql`: tablolar ve RLS politikaları
+   - `0002_words.sql`: test sözlüğü
+   - `0003_ranked_test.sql`: sunucu tarafında puanlanan testler. İstemci skor yazamaz; `start_test()` metni seçip başlangıç zamanını kaydeder, `finish_test()` yazılan metni buna göre puanlayıp sıralamayı günceller. Ayrıca sözlüğe gömülü kelime listelerini yedek olarak ekler.
 3. Project Settings → API'den **Project URL** ve **anon public key**'i al.
 4. `.env.example` dosyasını `.env.local` olarak kopyala ve `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` değerlerini doldur.
 5. `npm run dev` — giriş yap, kullanıcı adı seç, `/test` sayfasında testi tamamla, `/leaderboard`'da sonucu gör.
@@ -59,7 +62,7 @@ Bu değişkenler boşsa uygulama otomatik olarak çevrimdışı modda çalışı
 
 1 dakikalık test, kelimeleri veritabanındaki büyük sözlükten çeker. Her denemede `random_words` RPC'si ile ~800 rastgele kelime gelir; bir sonraki deneme için kelimeler önceden çekilir. Tablo boşsa ya da ulaşılamazsa uygulamaya gömülü küçük listeler kullanılır.
 
-1. SQL Editor'de [supabase/migrations/0002_words.sql](supabase/migrations/0002_words.sql) dosyasını çalıştır.
+1. `0002_words.sql` ve `0003_ranked_test.sql` dosyalarının çalıştırıldığından emin ol (yukarıya bak).
 2. Project Settings → API'den **service_role** key'i al ve `.env.local`'e `SUPABASE_SERVICE_ROLE_KEY=...` olarak ekle. Bu key RLS'i atlar: **asla `VITE_` önekiyle yazma**, yoksa tarayıcıya gönderilen pakete girer.
 3. Her satırında bir kelime olan dosyaları yükle (tekrar çalıştırmak güvenli):
 

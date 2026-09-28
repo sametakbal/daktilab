@@ -202,6 +202,7 @@ export const en: Dict = {
     desc: "The timer starts with your first key. Every attempt uses different words; the number of words you type correctly in 60 seconds is your score, and your best goes on the leaderboard.",
     start: "Start test",
     loading: "Preparing…",
+    notRanked: "This attempt wasn't added to the leaderboard: the server couldn't be reached or the test couldn't be verified.",
     submitted: "Score submitted to the leaderboard.",
     signInHint: "Sign in to appear on the leaderboard.",
     usernameHint: "Pick a username on the account page to appear on the leaderboard.",

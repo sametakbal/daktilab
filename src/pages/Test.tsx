@@ -2,23 +2,31 @@ import { createEffect, createSignal, Match, Show, Switch } from "solid-js";
 import { buildTest, type Exercise } from "../curriculum/generator";
 import { t } from "../i18n";
 import { LAYOUTS } from "../layouts";
-import { submitTestScore } from "../lib/leaderboard";
+import { finishRankedTest, type RankedRun, startRankedTest } from "../lib/leaderboard";
 import { prefetchTestWords, takeTestWords } from "../lib/testWords";
 import Runner, { type RunResult } from "../components/Runner";
 import ResultCard from "../components/ResultCard";
 import { Button, Card } from "../components/ui";
-import { progress, recordResult, streakDays } from "../store/progress";
+import { recordResult } from "../store/progress";
 import { settings } from "../store/settings";
 import { auth } from "../store/auth";
 
 const TEST_MS = 60_000;
+/** How long "start" waits for the server before falling back to an unranked local test. */
+const START_TIMEOUT_MS = 3000;
+
+const withTimeout = <T,>(p: Promise<T | null>, ms: number): Promise<T | null> =>
+    Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
 export default function TestPage() {
     const layout = () => LAYOUTS[settings.layout];
     const [run, setRun] = createSignal<Exercise[] | null>(null);
     const [result, setResult] = createSignal<RunResult | null>(null);
     const [submitted, setSubmitted] = createSignal(false);
+    const [rankFailed, setRankFailed] = createSignal(false);
     const [loading, setLoading] = createSignal(false);
+    /** Server-side run backing the current attempt; null for local, unranked attempts. */
+    let ranked: RankedRun | null = null;
 
     // Keep a batch of database words ready so starting a test doesn't wait on the network.
     createEffect(() => prefetchTestWords(settings.lang));
@@ -27,12 +35,17 @@ export default function TestPage() {
         if (loading()) return;
         setLoading(true);
         const lang = settings.lang;
-        const words = await takeTestWords(lang);
+        const canRank = !!auth.user() && !!auth.profile();
+        // Ranked attempts get their passage from the server, which later scores what was typed.
+        ranked = canRank ? await withTimeout(startRankedTest(lang, settings.layout), START_TIMEOUT_MS) : null;
+        const exercises: Exercise[] = ranked
+            ? [{ kind: "words", text: ranked.text }]
+            : buildTest(layout(), lang, Math.floor(Math.random() * 2 ** 32), (await takeTestWords(lang)) ?? undefined);
         setLoading(false);
         setResult(null);
         setSubmitted(false);
-        // Fresh words on every attempt; the fixed time limit keeps scores comparable.
-        setRun(buildTest(layout(), lang, Math.floor(Math.random() * 2 ** 32), words ?? undefined));
+        setRankFailed(canRank && !ranked);
+        setRun(exercises);
     };
 
     const startButton = (label: string) => (
@@ -45,11 +58,12 @@ export default function TestPage() {
         recordResult({ layout: settings.layout, lesson: null, metrics: r.metrics, charStats: r.charStats, bigramMisses: r.bigramMisses });
         setRun(null);
         setResult(r);
-        const uid = auth.user()?.id;
-        if (uid && auth.profile()) {
-            await submitTestScore(settings.layout, r.metrics.wpm, r.metrics.accuracy, streakDays(progress.history), uid);
-            setSubmitted(true);
-        }
+        const current = ranked;
+        ranked = null;
+        if (!current) return;
+        const score = await finishRankedTest(current.id, r.typed[0] ?? "", r.metrics.accuracy);
+        setSubmitted(score !== null);
+        setRankFailed(score === null);
     };
 
     return (
@@ -69,6 +83,9 @@ export default function TestPage() {
                             <ResultCard layout={layout()} scoreLabel={t("metrics.wordsLong")} metrics={r().metrics} charStats={r().charStats} actions={startButton(t("result.retry"))} />
                             <Show when={submitted()}>
                                 <p class="text-center text-sm text-emerald-600 dark:text-emerald-400">{t("test.submitted")}</p>
+                            </Show>
+                            <Show when={rankFailed()}>
+                                <p class="text-center text-sm text-amber-600 dark:text-amber-400">{t("test.notRanked")}</p>
                             </Show>
                             <Show when={auth.user() && !auth.profile()}>
                                 <p class="text-center text-sm text-slate-500 dark:text-slate-400">{t("test.usernameHint")}</p>

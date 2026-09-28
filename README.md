@@ -48,7 +48,10 @@ supabase/       SQL migrations
 The app works fully without a backend (localStorage). Accounts, cross-device progress sync and the global leaderboard need a [Supabase](https://supabase.com) project:
 
 1. Create a new Supabase project; under Authentication → Providers enable **Email** and, if you like, **Google**/**GitHub** OAuth.
-2. Run [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) in the SQL Editor (tables + RLS policies; safe to re-run).
+2. Run the migrations in [supabase/migrations/](supabase/migrations/) in order in the SQL Editor (all safe to re-run):
+   - `0001_init.sql`: tables and RLS policies
+   - `0002_words.sql`: the test dictionary
+   - `0003_ranked_test.sql`: server-scored tests. Clients can't write scores; `start_test()` picks the passage and records the start time, and `finish_test()` scores the typed text against it and updates the leaderboard. It also seeds the dictionary with the bundled word lists.
 3. Copy the **Project URL** and **anon public key** from Project Settings → API.
 4. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
 5. `npm run dev` — sign in, pick a username, finish the test on `/test` and see your result on `/leaderboard`.
@@ -59,7 +62,7 @@ If these variables are empty the app runs in offline mode automatically; the `/l
 
 The one-minute test pulls its words from a large dictionary in the database. Each attempt fetches ~800 random words through the `random_words` RPC, and the next batch is prefetched. If the table is empty or unreachable, the small bundled word lists are used instead.
 
-1. Run [supabase/migrations/0002_words.sql](supabase/migrations/0002_words.sql) in the SQL Editor.
+1. Make sure `0002_words.sql` and `0003_ranked_test.sql` have been run (see above).
 2. Copy the **service_role** key from Project Settings → API and add it to `.env.local` as `SUPABASE_SERVICE_ROLE_KEY=...`. This key bypasses RLS: **never give it a `VITE_` prefix**, or it will be shipped to the browser.
 3. Import the word files (one word per line; safe to re-run):
 

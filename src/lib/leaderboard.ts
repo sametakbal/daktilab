@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { LayoutId } from "../layouts/types";
 
@@ -6,33 +7,34 @@ export interface LeaderboardEntry {
     value: number;
 }
 
-/** Records a daily-test attempt and updates the leaderboard tables (personal best + streak). */
-export async function submitTestScore(
-    layout: LayoutId,
-    wpm: number,
-    accuracy: number,
-    currentStreak: number,
-    userId: string,
-): Promise<void> {
-    if (!supabase) return;
-    const today = new Date().toISOString().slice(0, 10);
-    const nowIso = new Date().toISOString();
+/** A test whose passage and start time live on the server, so its score can't be forged. */
+export interface RankedRun {
+    id: string;
+    text: string;
+}
 
-    await supabase.from("daily_test_scores").insert({ user_id: userId, layout, test_date: today, wpm, accuracy });
-
-    const { data: best } = await supabase.from("personal_bests").select("best_wpm").eq("user_id", userId).eq("layout", layout).maybeSingle();
-    if (!best || wpm > best.best_wpm) {
-        await supabase.from("personal_bests").upsert({ user_id: userId, layout, best_wpm: wpm, best_accuracy: accuracy, achieved_at: nowIso });
+/** Asks the server for a scored test run; null when offline, signed out or the server refuses. */
+export async function startRankedTest(lang: "tr" | "en", layout: LayoutId, client: SupabaseClient | null = supabase): Promise<RankedRun | null> {
+    if (!client) return null;
+    try {
+        const { data, error } = await client.rpc("start_test", { p_lang: lang, p_layout: layout });
+        const row = Array.isArray(data) ? data[0] : null;
+        if (error || !row?.run_id || !row?.run_text) return null;
+        return { id: row.run_id, text: row.run_text };
+    } catch {
+        return null;
     }
+}
 
-    const { data: stats } = await supabase.from("user_stats").select("longest_streak").eq("user_id", userId).maybeSingle();
-    await supabase.from("user_stats").upsert({
-        user_id: userId,
-        current_streak: currentStreak,
-        longest_streak: Math.max(currentStreak, stats?.longest_streak ?? 0),
-        last_practice_date: today,
-        updated_at: nowIso,
-    });
+/** Sends what was typed; the server scores it and updates the leaderboard. Returns the server's score. */
+export async function finishRankedTest(id: string, typed: string, accuracy: number, client: SupabaseClient | null = supabase): Promise<number | null> {
+    if (!client) return null;
+    try {
+        const { data, error } = await client.rpc("finish_test", { p_run: id, p_typed: typed, p_accuracy: accuracy });
+        return error || typeof data !== "number" ? null : data;
+    } catch {
+        return null;
+    }
 }
 
 interface PersonalBestRow {

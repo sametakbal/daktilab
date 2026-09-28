@@ -19,6 +19,8 @@ export interface RunResult {
   metrics: Metrics;
   charStats: Record<string, CharStat>;
   bigramMisses: Record<string, number>;
+  /** What was typed in each exercise (a timed run may stop mid-text). */
+  typed: string[];
 }
 
 interface RunnerProps {
@@ -59,6 +61,7 @@ export default function Runner(props: RunnerProps) {
   let stepTimer: number | undefined;
   /** Correct words from finished steps, for timed runs. */
   let wordsDone = 0;
+  const typedAll: string[] = [];
   let ended = false;
 
   const exercise = () => props.exercises[step()];
@@ -139,6 +142,7 @@ export default function Runner(props: RunnerProps) {
     charStats = mergeCharStats(charStats, s.charStats);
     for (const [bg, n] of Object.entries(s.bigramMisses)) bigrams[bg] = (bigrams[bg] ?? 0) + n;
     wordsDone += correctWords(s);
+    typedAll.push(s.typed.join(""));
     const all = [...done(), m];
     setDone(all);
     if (!timeUp && step() + 1 < props.exercises.length) {
@@ -148,7 +152,7 @@ export default function Runner(props: RunnerProps) {
     ended = true;
     const total = combine(all);
     if (props.timeLimitMs) total.wpm = total.durationMs > 0 ? wordsDone / (total.durationMs / 60000) : 0;
-    stepTimer = window.setTimeout(() => props.onComplete({ metrics: total, charStats, bigramMisses: bigrams }), STEP_PAUSE_MS);
+    stepTimer = window.setTimeout(() => props.onComplete({ metrics: total, charStats, bigramMisses: bigrams, typed: typedAll }), STEP_PAUSE_MS);
   };
 
   const checkTime = (at: number) => {

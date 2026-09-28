@@ -200,6 +200,7 @@ export const tr = {
     desc: "Süre ilk tuşla başlar. Her denemede farklı kelimeler gelir; 60 saniyede doğru yazdığın kelime sayısı skorun olur ve en iyisi sıralamaya eklenir.",
     start: "Teste başla",
     loading: "Hazırlanıyor…",
+    notRanked: "Bu deneme sıralamaya kaydedilemedi: sunucuya ulaşılamadı ya da test doğrulanamadı.",
     submitted: "Skor sıralamaya gönderildi.",
     signInHint: "Sıralamada görünmek için giriş yap.",
     usernameHint: "Sıralamada görünmek için hesap sayfasından bir kullanıcı adı seç.",
