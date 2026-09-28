@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { combine, metrics } from "./metrics";
+import { combine, correctWords, metrics } from "./metrics";
 import { createSession, input, isFinished } from "./session";
 
 const typeAll = (text: string, keys: string[], mode: "stop" | "continue" = "stop", step = 200) => {
@@ -70,5 +70,23 @@ describe("session", () => {
     ]);
     expect(m.wpm).toBeCloseTo(20);
     expect(m.accuracy).toBeCloseTo((100 / 105) * 100);
+  });
+});
+
+describe("correctWords", () => {
+  it("counts finished words, not the one in progress", () => {
+    expect(correctWords(typeAll("ev su yol", Array.from("ev su y")))).toBe(2);
+  });
+
+  it("counts a word as soon as its last letter is typed", () => {
+    expect(correctWords(typeAll("ev su", Array.from("ev")))).toBe(1);
+  });
+
+  it("stop mode counts words fixed after a mistake", () => {
+    expect(correctWords(typeAll("ev su", ["e", "x", "v", " ", "s", "u"]))).toBe(2);
+  });
+
+  it("continue mode skips words with a wrong letter", () => {
+    expect(correctWords(typeAll("ev su", ["e", "x", " ", "s", "u"], "continue"))).toBe(1);
   });
 });

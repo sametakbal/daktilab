@@ -216,12 +216,20 @@ export function buildPractice(layout: Layout, learned: string[], weakness: Recor
   ];
 }
 
-/** Daily test: meaningful lowercase words in the given language, limited to what the layout can type. */
-export function buildTest(layout: Layout, lang: "tr" | "en", seed: number): Exercise[] {
+const TEST_TEXT_CHARS = 2500;
+
+/**
+ * Test passage: meaningful lowercase words in the given language, limited to what the layout can type.
+ * `dictionary` is usually a random batch from the database; the bundled list is the fallback.
+ */
+export function buildTest(layout: Layout, lang: "tr" | "en", seed: number, dictionary?: string[]): Exercise[] {
   const rng = createRng(seed);
   const keys = strokeMap(layout);
   const typeable = (ch: string) => keys.has(ch);
   const toLower = (s: string) => s.toLocaleLowerCase(lang);
-  const dict = wordsForLang(lang);
-  return [90, 90, 90].map((length) => ({ kind: "words" as const, text: plainWordsText(rng, dict, typeable, toLower, length) }));
+  // One long passage: enough text that even very fast typists don't run out within the time limit.
+  const text =
+    (dictionary && plainWordsText(rng, dictionary, typeable, toLower, TEST_TEXT_CHARS)) ||
+    plainWordsText(rng, wordsForLang(lang), typeable, toLower, TEST_TEXT_CHARS);
+  return [{ kind: "words", text }];
 }

@@ -17,6 +17,8 @@ const SettingsPage = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 
+const REPO_URL = "https://github.com/sametakbal/daktilab";
+
 function useTheme() {
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   const [systemDark, setSystemDark] = createSignal(media.matches);
@@ -92,7 +94,12 @@ function Shell(props: RouteSectionProps) {
         <div class="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">{t("touch")}</div>
       </Show>
       <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-10">{props.children}</main>
-      <footer class="mx-auto w-full max-w-6xl px-4 pb-6 text-xs text-slate-400">{t("app.name")} · {t("app.tagline")}</footer>
+      <footer class="mx-auto w-full max-w-6xl px-4 pb-6 text-xs text-slate-400">
+        {t("app.name")} · {t("app.tagline")} · {t("app.openSource")} —{" "}
+        <a href={REPO_URL} target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:text-indigo-500">
+          {t("app.source")}
+        </a>
+      </footer>
     </div>
   );
 }

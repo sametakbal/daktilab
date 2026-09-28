@@ -1,10 +1,24 @@
-import { For } from "solid-js";
+import { createEffect, For } from "solid-js";
 import type { Session } from "../engine/session";
 
 /** The exercise text with typed, mistyped, current and upcoming characters. */
-export default function TypingArea(props: { session: Session; shake?: boolean }) {
+export default function TypingArea(props: { session: Session; shake?: boolean; /** Show only this many lines, scrolling with the caret. */ lines?: number }) {
+  let box: HTMLDivElement | undefined;
+
+  // Keep the caret on the second visible line so upcoming text stays in view.
+  createEffect(() => {
+    const pos = props.session.pos;
+    if (!props.lines || !box) return;
+    const caret = box.children[pos] as HTMLElement | undefined;
+    const lineHeight = Number.parseFloat(getComputedStyle(box).lineHeight) || 0;
+    // The box is position:relative, so offsetTop is already measured from its top edge.
+    box.scrollTop = caret ? Math.max(0, caret.offsetTop - lineHeight) : 0;
+  });
+
   return (
     <div
+      ref={box}
+      style={props.lines ? { height: `${props.lines * 1.9}em`, overflow: "hidden", position: "relative" } : undefined}
       classList={{
         "font-mono text-2xl leading-[1.9] tracking-wide sm:text-3xl": true,
         "whitespace-pre-wrap break-normal": true,
