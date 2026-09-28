@@ -1,6 +1,6 @@
 # daktilab
 
-Aşama aşama 10 parmak yazma eğitimi veren bir web uygulaması. SolidJS + TypeScript + Tailwind CSS ile yazıldı; backend yok, ilerleme tarayıcıda (localStorage) saklanıyor.
+Aşama aşama 10 parmak yazma eğitimi veren bir web uygulaması. SolidJS + TypeScript + Tailwind CSS ile yazıldı. İlerleme her zaman tarayıcıda (localStorage) saklanır; isteğe bağlı bir Supabase backend'i ile hesap, bulut senkronizasyon, günlük test ve global sıralama eklenebilir (aşağıya bakın).
 
 - Klavye düzenleri: **Türkçe Q**, **Türkçe F**, **İngilizce (US)**
 - Arayüz: Türkçe / English
@@ -31,8 +31,21 @@ src/
   curriculum/   aşamalar ve ders/alıştırma üretici
   engine/       yazma oturumu, metrikler, metin üretici
   words/        TR/EN kelime listeleri ve cümleler
-  store/        ayarlar ve ilerleme (localStorage)
+  store/        ayarlar, ilerleme (localStorage), auth + bulut senkronizasyon
+  lib/          supabase istemcisi, sıralama (leaderboard) sorguları
   i18n/         TR/EN sözlükler
   components/   Keyboard, Hands, TypingArea, Runner, ResultCard, LineChart…
-  pages/        Home, Lessons, Lesson, Practice, Stats, Settings, Onboarding
+  pages/        Home, Lessons, Lesson, Practice, Test, Leaderboard, Stats, Settings, Login, Onboarding
 ```
+
+## Backend kurulumu (opsiyonel)
+
+Backend olmadan uygulama tamamen çalışır (localStorage). Hesap, cihazlar arası ilerleme senkronizasyonu, günlük standart test ve global sıralama için bir [Supabase](https://supabase.com) projesi gerekir:
+
+1. Supabase'de yeni bir proje oluştur; Authentication → Providers'tan **Email** ve (istersen) **Google**/**GitHub** OAuth sağlayıcılarını aç.
+2. SQL Editor'de [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) dosyasını çalıştır (tablolar + RLS politikaları).
+3. Project Settings → API'den **Project URL** ve **anon public key**'i al.
+4. `.env.example` dosyasını `.env.local` olarak kopyala ve `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` değerlerini doldur.
+5. `npm run dev` — giriş yap, `/test` sayfasından günlük testi tamamla, `/leaderboard`'da sonucu gör.
+
+Bu değişkenler boşsa uygulama otomatik olarak çevrimdışı modda çalışır; `/login`, `/leaderboard` ve `/test` sayfaları bunu belirtir.

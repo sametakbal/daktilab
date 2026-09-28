@@ -1,6 +1,6 @@
 export const tr = {
   app: { name: "daktilab", tagline: "10 parmak yazma laboratuvarı" },
-  nav: { home: "Ana sayfa", lessons: "Dersler", practice: "Pratik", stats: "İstatistik", settings: "Ayarlar" },
+  nav: { home: "Ana sayfa", lessons: "Dersler", practice: "Pratik", test: "Test", leaderboard: "Sıralama", stats: "İstatistik", settings: "Ayarlar", login: "Giriş yap" },
   layouts: { "tr-q": "Türkçe Q", "tr-f": "Türkçe F", "en-us": "İngilizce (US)" },
   fingers: {
     lp: "sol serçe parmağınla", lr: "sol yüzük parmağınla", lm: "sol orta parmağınla", li: "sol işaret parmağınla",
@@ -176,6 +176,41 @@ export const tr = {
   },
   touch: "daktilab fiziksel klavye için tasarlandı. En iyi deneyim için bilgisayardan kullan.",
   common: { close: "Kapat", minutes: "{{n}} dk", seconds: "{{n}} sn" },
+  auth: {
+    title: "Hesap",
+    notConfigured: "Bu dağıtımda bulut özellikleri henüz yapılandırılmadı.",
+    account: "Hesap",
+    email: "E-posta",
+    password: "Şifre",
+    signIn: "Giriş yap",
+    signUp: "Hesap oluştur",
+    signOut: "Çıkış yap",
+    haveAccount: "Zaten hesabın var mı? Giriş yap",
+    needAccount: "Hesabın yok mu? Oluştur",
+    continueWith: "{{provider}} ile devam et",
+    pickUsername: "Diğer oyuncuların sıralamada göreceği bir kullanıcı adı seç.",
+    username: "Kullanıcı adı",
+    save: "Kaydet",
+    signedInAs: "{{name}} olarak giriş yapıldı",
+  },
+  test: {
+    title: "Günlük test",
+    sub: "Her gün herkese aynı metin — hızını karşılaştırmanın adil bir yolu.",
+    desc: "Her gün ve düzen için standart bir metin. En iyi KDK'n sıralamaya eklenir.",
+    start: "Teste başla",
+    submitted: "Skor sıralamaya gönderildi.",
+    signInHint: "Sıralamada görünmek için giriş yap.",
+    usernameHint: "Sıralamada görünmek için hesap sayfasından bir kullanıcı adı seç.",
+  },
+  leaderboard: {
+    title: "Sıralama",
+    sub: "Tüm oyuncuların en iyi günlük test sonuçları.",
+    byWpm: "En iyi KDK",
+    byStreak: "En uzun seri",
+    player: "Oyuncu",
+    streakCol: "Gün",
+    empty: "Henüz skor yok — ilk sen ol!",
+  },
 };
 
 export type Dict = typeof tr;

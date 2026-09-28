@@ -35,18 +35,41 @@ const top = ["KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "Ke
 const home = ["KeyA", "KeyS", "KeyD", "KeyF", "KeyG", "KeyH", "KeyJ", "KeyK", "KeyL", "Semicolon", "Quote"];
 const bottom = ["KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM", "Comma", "Period", "Slash"];
 
-const spaceRow: PhysicalKey[] = [
-  { code: "ControlLeft", w: 1.25, label: "Ctrl" },
+export type KeyboardOS = "mac" | "windows";
+
+/** Reads the connecting computer's OS from the UA; falls back to macOS when it can't be determined. */
+export function detectKeyboardOS(): KeyboardOS {
+  if (typeof navigator === "undefined") return "mac";
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+  const platform = nav.userAgentData?.platform ?? nav.platform ?? nav.userAgent ?? "";
+  return /win/i.test(platform) ? "windows" : "mac";
+}
+
+const DETECTED_OS = detectKeyboardOS();
+
+const macSpaceRow: PhysicalKey[] = [
+  { code: "ControlLeft", w: 1.25, label: "Control" },
+  { code: "AltLeft", w: 1.25, label: "Option" },
   { code: "MetaLeft", w: 1.25, label: "⌘" },
+  { code: "Space", w: 6.25, label: "" },
+  { code: "MetaRight", w: 1.25, label: "⌘" },
+  { code: "AltRight", w: 1.25, label: "Option" },
+  { code: "ControlRight", w: 2.5, label: "Control" },
+];
+
+const windowsSpaceRow: PhysicalKey[] = [
+  { code: "ControlLeft", w: 1.25, label: "Ctrl" },
+  { code: "MetaLeft", w: 1.25, label: "⊞" },
   { code: "AltLeft", w: 1.25, label: "Alt" },
   { code: "Space", w: 6.25, label: "" },
   { code: "AltRight", w: 1.25, label: "AltGr" },
-  { code: "MetaRight", w: 1.25, label: "⌘" },
+  { code: "MetaRight", w: 1.25, label: "⊞" },
   { code: "ControlRight", w: 2.5, label: "Ctrl" },
 ];
 
-/** Rows of a 15u-wide board. */
-export function physicalRows(iso: boolean): PhysicalKey[][] {
+/** Rows of a 15u-wide board. `os` defaults to the detected OS of the connecting computer (macOS if unknown). */
+export function physicalRows(iso: boolean, os: KeyboardOS = DETECTED_OS): PhysicalKey[][] {
+  const spaceRow = os === "windows" ? windowsSpaceRow : macSpaceRow;
   if (iso) {
     return [
       [...row(digits), { code: "Backspace", w: 2, label: "⌫" }],

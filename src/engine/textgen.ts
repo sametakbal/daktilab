@@ -160,3 +160,16 @@ export function sentenceText(rng: Rng, sentences: string[], typeable: (ch: strin
   }
   return out.join(" ");
 }
+
+/** Plain lowercase real words only: no capitals, punctuation or numbers. */
+export function plainWordsText(rng: Rng, dictionary: string[], typeable: (ch: string) => boolean, toLower: (s: string) => string, length: number): string {
+  const pool = [...new Set(dictionary.map(toLower))].filter((w) => w.length > 1 && Array.from(w).every((ch) => isLetter(ch) && typeable(ch)));
+  if (pool.length === 0) return "";
+  let prev = "";
+  return fill(length, () => {
+    let w = pick(rng, pool);
+    if (w === prev && pool.length > 1) w = pick(rng, pool);
+    prev = w;
+    return w;
+  });
+}

@@ -2,7 +2,7 @@ import type { Dict } from "./tr";
 
 export const en: Dict = {
   app: { name: "daktilab", tagline: "A touch-typing laboratory" },
-  nav: { home: "Home", lessons: "Lessons", practice: "Practice", stats: "Stats", settings: "Settings" },
+  nav: { home: "Home", lessons: "Lessons", practice: "Practice", test: "Test", leaderboard: "Leaderboard", stats: "Stats", settings: "Settings", login: "Sign in" },
   layouts: { "tr-q": "Turkish Q", "tr-f": "Turkish F", "en-us": "English (US)" },
   fingers: {
     lp: "your left pinky", lr: "your left ring finger", lm: "your left middle finger", li: "your left index finger",
@@ -178,4 +178,39 @@ export const en: Dict = {
   },
   touch: "daktilab is designed for a physical keyboard. Use a computer for the best experience.",
   common: { close: "Close", minutes: "{{n}} min", seconds: "{{n}} s" },
+  auth: {
+    title: "Account",
+    notConfigured: "Cloud features aren't configured for this deployment yet.",
+    account: "Account",
+    email: "Email",
+    password: "Password",
+    signIn: "Sign in",
+    signUp: "Create account",
+    signOut: "Sign out",
+    haveAccount: "Already have an account? Sign in",
+    needAccount: "No account yet? Create one",
+    continueWith: "Continue with {{provider}}",
+    pickUsername: "Pick a username other players will see on the leaderboard.",
+    username: "Username",
+    save: "Save",
+    signedInAs: "Signed in as {{name}}",
+  },
+  test: {
+    title: "Daily test",
+    sub: "Same passage for everyone, every day — a fair way to compare your speed.",
+    desc: "One standardized text per day and layout. Your best WPM goes on the leaderboard.",
+    start: "Start test",
+    submitted: "Score submitted to the leaderboard.",
+    signInHint: "Sign in to appear on the leaderboard.",
+    usernameHint: "Pick a username on the account page to appear on the leaderboard.",
+  },
+  leaderboard: {
+    title: "Leaderboard",
+    sub: "Best daily-test results from every player.",
+    byWpm: "Best WPM",
+    byStreak: "Longest streak",
+    player: "Player",
+    streakCol: "Days",
+    empty: "No scores yet — be the first!",
+  },
 };

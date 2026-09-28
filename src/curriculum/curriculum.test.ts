@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { LAYOUT_IDS, LAYOUTS, isLetter, strokeFor } from "../layouts";
 import { FINGER_OF } from "../layouts/physical";
-import { allLessons, buildExercises, buildPractice } from "./generator";
+import { allLessons, buildExercises, buildPractice, buildTest } from "./generator";
+import { wordsForLang } from "../words";
 
 describe.each(LAYOUT_IDS)("layout %s", (id) => {
   const layout = LAYOUTS[id];
@@ -50,6 +51,22 @@ describe.each(LAYOUT_IDS)("layout %s", (id) => {
     const set = new Set([...learned, " "]);
     for (const ex of buildPractice(layout, learned, { [learned[0]]: 1 }, 7, [learned[1]])) {
       for (const ch of ex.text) expect(set.has(ch), ch).toBe(true);
+    }
+  });
+});
+
+describe.each(LAYOUT_IDS)("daily test on %s", (id) => {
+  it.each(["tr", "en"] as const)("uses only lowercase dictionary words in %s", (lang) => {
+    const layout = LAYOUTS[id];
+    const dict = new Set(wordsForLang(lang));
+    const exercises = buildTest(layout, lang, 42);
+    for (const ex of exercises) {
+      expect(ex.text.length).toBeGreaterThan(0);
+      for (const word of ex.text.split(" ")) {
+        expect(dict.has(word)).toBe(true);
+        expect(word).toBe(word.toLocaleLowerCase(lang));
+        for (const ch of word) expect(strokeFor(layout, ch)).toBeDefined();
+      }
     }
   });
 });

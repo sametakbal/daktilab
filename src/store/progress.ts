@@ -41,7 +41,7 @@ export interface Progress {
   history: HistoryEntry[];
 }
 
-const HISTORY_LIMIT = 500;
+export const HISTORY_LIMIT = 500;
 /** Once a key has this many samples, older data is halved so recent practice counts more. */
 const DECAY_AT = 200;
 export const PASS_ACCURACY = 94;

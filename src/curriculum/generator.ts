@@ -3,8 +3,8 @@ import { isLetter, lower, strokeFor, strokeMap, upper } from "../layouts";
 import { HOME_KEYS } from "../layouts/physical";
 import type { Layout } from "../layouts/types";
 import { createRng, hashString } from "../lib/rng";
-import { drillText, type GenOptions, introText, sentenceText, splitAlphabet, wordsText } from "../engine/textgen";
-import { sentencesFor, wordsFor } from "../words";
+import { drillText, type GenOptions, introText, plainWordsText, sentenceText, splitAlphabet, wordsText } from "../engine/textgen";
+import { sentencesFor, wordsFor, wordsForLang } from "../words";
 import { CURRICULA, type StageKey, type Visibility } from "./stages";
 
 export type LessonKind = "keys" | "caps" | "review" | "text";
@@ -214,4 +214,14 @@ export function buildPractice(layout: Layout, learned: string[], weakness: Recor
     { kind: "drill", text: drillText({ rng, alphabet, length: 70, toUpper: (ch) => upper(layout, ch), weight: (ch) => (focusSet.has(ch) ? 6 : 1) }) },
     ...exercises,
   ];
+}
+
+/** Daily test: meaningful lowercase words in the given language, limited to what the layout can type. */
+export function buildTest(layout: Layout, lang: "tr" | "en", seed: number): Exercise[] {
+  const rng = createRng(seed);
+  const keys = strokeMap(layout);
+  const typeable = (ch: string) => keys.has(ch);
+  const toLower = (s: string) => s.toLocaleLowerCase(lang);
+  const dict = wordsForLang(lang);
+  return [90, 90, 90].map((length) => ({ kind: "words" as const, text: plainWordsText(rng, dict, typeable, toLower, length) }));
 }

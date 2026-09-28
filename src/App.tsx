@@ -2,14 +2,19 @@ import { A, HashRouter, Route, type RouteSectionProps } from "@solidjs/router";
 import { createEffect, createSignal, For, lazy, onCleanup, onMount, Show } from "solid-js";
 import { t } from "./i18n";
 import { LAYOUT_IDS } from "./layouts";
+import { auth } from "./store/auth";
 import { setSettings, settings } from "./store/settings";
+import "./store/sync"; // registers the background cloud-progress sync effects
 import Home from "./pages/Home";
 
 const Lessons = lazy(() => import("./pages/Lessons"));
 const LessonPage = lazy(() => import("./pages/Lesson"));
 const Practice = lazy(() => import("./pages/Practice"));
+const TestPage = lazy(() => import("./pages/Test"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Stats = lazy(() => import("./pages/Stats"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const Login = lazy(() => import("./pages/Login"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 function useTheme() {
@@ -33,6 +38,8 @@ function Shell(props: RouteSectionProps) {
     { href: "/", key: "nav.home", end: true },
     { href: "/lessons", key: "nav.lessons" },
     { href: "/practice", key: "nav.practice" },
+    { href: "/test", key: "nav.test" },
+    { href: "/leaderboard", key: "nav.leaderboard" },
     { href: "/stats", key: "nav.stats" },
     { href: "/settings", key: "nav.settings" },
   ] as const;
@@ -73,6 +80,12 @@ function Shell(props: RouteSectionProps) {
           >
             {settings.lang === "tr" ? "EN" : "TR"}
           </button>
+          <A
+            href="/login"
+            class="whitespace-nowrap rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            {auth.user() ? (auth.profile()?.username ?? t("auth.account")) : t("nav.login")}
+          </A>
         </div>
       </header>
       <Show when={touchOnly()}>
@@ -92,8 +105,11 @@ export default function App() {
       <Route path="/lessons" component={Lessons} />
       <Route path="/lesson/:id" component={LessonPage} />
       <Route path="/practice" component={Practice} />
+      <Route path="/test" component={TestPage} />
+      <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/stats" component={Stats} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/login" component={Login} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="*" component={Home} />
     </HashRouter>
