@@ -193,6 +193,7 @@ export const tr = {
     username: "Kullanıcı adı",
     save: "Kaydet",
     signedInAs: "{{name}} olarak giriş yapıldı",
+    oauthFailed: "Sağlayıcı ile giriş tamamlanamadı. Lütfen tekrar dene.",
   },
   test: {
     title: "Günlük test",

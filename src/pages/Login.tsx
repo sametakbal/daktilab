@@ -2,14 +2,25 @@ import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { Button, Card } from "../components/ui";
 import { auth } from "../store/auth";
-import { supabase } from "../lib/supabase";
+import { apiEnabled } from "../lib/api";
+
+/** The API redirects back with ?oauth_error=… when a Google/GitHub sign-in fails; read it once and clear it. */
+function oauthErrorFromUrl(): string | null {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("oauth_error");
+    if (code) {
+        url.searchParams.delete("oauth_error");
+        window.history.replaceState(window.history.state, "", url);
+    }
+    return code;
+}
 
 export default function Login() {
     const [email, setEmail] = createSignal("");
     const [password, setPassword] = createSignal("");
     const [mode, setMode] = createSignal<"signin" | "signup">("signin");
     const [username, setUsername] = createSignal("");
-    const [error, setError] = createSignal("");
+    const [error, setError] = createSignal(oauthErrorFromUrl() ? t("auth.oauthFailed") : "");
     const [busy, setBusy] = createSignal(false);
 
     const submit = async (e: Event) => {
@@ -39,13 +50,13 @@ export default function Login() {
         <div class="mx-auto flex max-w-sm flex-col gap-6">
             <h1 class="text-3xl font-extrabold tracking-tight">{t("auth.title")}</h1>
 
-            <Show when={!supabase}>
+            <Show when={!apiEnabled}>
                 <Card>
                     <p class="text-sm text-slate-500">{t("auth.notConfigured")}</p>
                 </Card>
             </Show>
 
-            <Show when={supabase}>
+            <Show when={apiEnabled}>
                 <Show
                     when={auth.user()}
                     fallback={

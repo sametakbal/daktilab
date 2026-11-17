@@ -1,5 +1,5 @@
 import { createEffect, createRoot, createSignal } from "solid-js";
-import { supabase } from "../lib/supabase";
+import { api, apiEnabled, ApiError } from "../lib/api";
 import type { LayoutId } from "../layouts/types";
 import { auth } from "./auth";
 import { HISTORY_LIMIT, progress, setProgress, type CharRecord, type HistoryEntry, type LayoutProgress, type Progress } from "./progress";
@@ -55,14 +55,18 @@ let pulledFor: string | null = null;
 const [status, setStatus] = createSignal<"idle" | "syncing" | "synced" | "error">("idle");
 
 async function pull(userId: string): Promise<void> {
-    if (!supabase) return;
-    const { data, error } = await supabase.from("progress_sync").select("data").eq("user_id", userId).maybeSingle();
-    if (error || !data) return;
-    setProgress(mergeProgress(progress, data.data as Progress));
+    if (!apiEnabled) return;
+    try {
+        const { data } = await api<{ data: Progress | null }>("GET", "/progress");
+        // Ignore a late answer for an account that has since signed out or switched.
+        if (data && auth.user()?.id === userId) setProgress(mergeProgress(progress, data));
+    } catch (err) {
+        if (err instanceof ApiError && err.status === 401) void auth.refresh();
+    }
 }
 
 async function push(): Promise<void> {
-    if (!supabase) return;
+    if (!apiEnabled) return;
     const uid = auth.user()?.id;
     if (!uid || !navigator.onLine) return;
     // Store proxies can't be structuredClone'd; a JSON round-trip gives a plain snapshot.
@@ -70,9 +74,14 @@ async function push(): Promise<void> {
     if (payload === lastPushed) return;
     const snapshot: Progress = JSON.parse(payload);
     setStatus("syncing");
-    const { error } = await supabase.from("progress_sync").upsert({ user_id: uid, data: snapshot, updated_at: new Date().toISOString() });
-    setStatus(error ? "error" : "synced");
-    if (!error) lastPushed = payload;
+    try {
+        await api("PUT", "/progress", { data: snapshot });
+        lastPushed = payload;
+        setStatus("synced");
+    } catch (err) {
+        setStatus("error");
+        if (err instanceof ApiError && err.status === 401) void auth.refresh();
+    }
 }
 
 function schedulePush(): void {

@@ -3,7 +3,7 @@ import { t } from "../i18n";
 import { LAYOUT_IDS } from "../layouts";
 import type { LayoutId } from "../layouts/types";
 import { fetchStreakLeaderboard, fetchWpmLeaderboard } from "../lib/leaderboard";
-import { supabase } from "../lib/supabase";
+import { apiEnabled } from "../lib/api";
 import { Card, Segmented } from "../components/ui";
 import { auth } from "../store/auth";
 
@@ -25,13 +25,13 @@ export default function Leaderboard() {
                 <p class="mt-1 text-slate-500 dark:text-slate-400">{t("leaderboard.sub")}</p>
             </div>
 
-            <Show when={!supabase}>
+            <Show when={!apiEnabled}>
                 <Card>
                     <p class="text-sm text-slate-500">{t("auth.notConfigured")}</p>
                 </Card>
             </Show>
 
-            <Show when={supabase}>
+            <Show when={apiEnabled}>
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <Segmented<Board>
                         value={board()}

@@ -1,7 +1,11 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabase } from "./supabase";
+import { api, apiEnabled } from "./api";
 
 export type WordLang = "tr" | "en";
+
+/** Fetches a JSON resource from the API; injectable for tests. */
+export type Getter = (path: string) => Promise<unknown>;
+
+const apiGet: Getter | null = apiEnabled ? (path) => api<unknown>("GET", path) : null;
 
 /** Enough words for a one-minute test even after dropping ones the layout can't type. */
 const BATCH_SIZE = 800;
@@ -9,11 +13,11 @@ const BATCH_SIZE = 800;
 const WAIT_MS = 1500;
 
 /** Random words from the database dictionary, or null when unavailable. */
-export async function fetchTestWords(lang: WordLang, count = BATCH_SIZE, client: SupabaseClient | null = supabase): Promise<string[] | null> {
-  if (!client) return null;
+export async function fetchTestWords(lang: WordLang, count = BATCH_SIZE, get: Getter | null = apiGet): Promise<string[] | null> {
+  if (!get) return null;
   try {
-    const { data, error } = await client.rpc("random_words", { p_lang: lang, p_count: count });
-    if (error || !Array.isArray(data) || data.length === 0) return null;
+    const data = await get(`/words?lang=${lang}&count=${count}`);
+    if (!Array.isArray(data) || data.length === 0) return null;
     return data as string[];
   } catch {
     return null;

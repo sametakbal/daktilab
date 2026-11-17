@@ -45,10 +45,8 @@ export default function TestPage() {
         recordResult({ layout: settings.layout, lesson: null, metrics: r.metrics, charStats: r.charStats, bigramMisses: r.bigramMisses });
         setRun(null);
         setResult(r);
-        const uid = auth.user()?.id;
-        if (uid && auth.profile()) {
-            await submitTestScore(settings.layout, r.metrics.wpm, r.metrics.accuracy, streakDays(progress.history), uid);
-            setSubmitted(true);
+        if (auth.user() && auth.profile()) {
+            setSubmitted(await submitTestScore(settings.layout, r.metrics.wpm, r.metrics.accuracy, streakDays(progress.history)));
         }
     };
 
