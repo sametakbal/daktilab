@@ -1,0 +1,27 @@
+# Local full stack: `docker compose up --build`, then open http://localhost:8080
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: daktilab
+      POSTGRES_PASSWORD: daktilab
+      POSTGRES_DB: daktilab
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "daktilab"]
+      interval: 2s
+      retries: 15
+
+  app:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8080:8080"]
+    environment:
+      DATABASE_URL: postgres://daktilab:daktilab@db:5432/daktilab?sslmode=disable
+      APP_URL: http://localhost:8080
+      # GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET enable OAuth.
+
+volumes:
+  pgdata:

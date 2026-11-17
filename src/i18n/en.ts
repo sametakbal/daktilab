@@ -195,6 +195,7 @@ export const en: Dict = {
     username: "Username",
     save: "Save",
     signedInAs: "Signed in as {{name}}",
+    oauthFailed: "Sign-in with the provider didn't complete. Please try again.",
   },
   test: {
     title: "Daily test",
